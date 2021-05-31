@@ -5,6 +5,7 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 )
@@ -16,7 +17,7 @@ type embedFileSystem struct {
 	http.FileSystem
 }
 
-func (e embedFileSystem) Exists(prefix string, path string) bool {
+func (e embedFileSystem) Exists(_ string, path string) bool {
 	_, err := e.Open(path)
 	if err != nil {
 		return false
@@ -25,12 +26,12 @@ func (e embedFileSystem) Exists(prefix string, path string) bool {
 }
 
 func EmbedFolder(fsEmbed embed.FS, targetPath string) static.ServeFileSystem {
-	fsys, err := fs.Sub(fsEmbed, targetPath)
+	fileSystem, err := fs.Sub(fsEmbed, targetPath)
 	if err != nil {
 		panic(err)
 	}
 	return embedFileSystem{
-		FileSystem: http.FS(fsys),
+		FileSystem: http.FS(fileSystem),
 	}
 }
 
@@ -48,5 +49,8 @@ func main() {
 			"message": "pong",
 		})
 	})
-	r.Run("127.0.0.1:" + os.Getenv("PORT")) // Only listen locally for nginx
+	err := r.Run("127.0.0.1:" + os.Getenv("PORT")) // Only listen locally for nginx
+	if err != nil {
+		log.Fatal("failed to start gin server" + err.Error())
+	}
 }
